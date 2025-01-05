@@ -12,7 +12,7 @@ import (
 func pingHTTP(w http.ResponseWriter, _ *http.Request) {
 	log.Info("HTTP service health check")
 	w.WriteHeader(http.StatusOK)
-	_, err := w.Write([]byte("200 OK"))
+	_, err := w.Write([]byte("200 Subscriber OK"))
 	if err != nil {
 		return
 	}

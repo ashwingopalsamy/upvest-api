@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
 
@@ -20,7 +21,7 @@ func main() {
 
 	// Parse configuration
 	config := Config{
-		DBURL: os.Getenv("DB_URL"),
+		DBURL: os.Getenv("DBURL"),
 	}
 
 	// Init Database
@@ -30,6 +31,14 @@ func main() {
 	}
 	defer db.Close()
 
+	// Init Subscriber
+	initKafkaSubscriber()
+	defer subscriber.Close()
+
+	go func() {
+		subscriber.Consume(context.TODO(), kafkaListener)
+	}()
+
 	// Setup Router
 	router := mux.NewRouter()
 
@@ -37,8 +46,8 @@ func main() {
 	router.HandleFunc("/health", pingHTTP).Methods("GET")
 
 	// Init HTTP Server
-	log.Info("starting server on :8080")
-	if err := http.ListenAndServe(":8080", router); err != nil {
+	log.Info("starting server on :8081")
+	if err := http.ListenAndServe(":8081", router); err != nil {
 		log.Fatalf("failed to start server: %v", err)
 	}
 }
