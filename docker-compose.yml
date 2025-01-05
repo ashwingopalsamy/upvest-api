@@ -1,0 +1,42 @@
+services:
+  upvest-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  kafka:
+    image: bitnami/kafka:3.9.0
+    container_name: kafka
+    env_file:
+      - .env
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    networks:
+        - app-network
+    logging:
+      driver: "none"
+
+  zookeeper:
+      image: bitnami/zookeeper:3.7.0
+      container_name: zookeeper
+      env_file:
+        - .env
+      ports:
+          - "2181:2181"
+      networks:
+          - app-network
+      logging:
+        driver: "none"
+networks:
+  app-network:
+    driver: bridge
