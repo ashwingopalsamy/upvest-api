@@ -1,5 +1,13 @@
-SERVICE_NAME=upvest-api
-DOCKER_COMPOSE=docker-compose -f docker-compose.yml -f docker-compose-db.yml
+# Service names
+PUBLISHER_NAME=upvest-api-publisher
+SUBSCRIBER_NAME=upvest-api-subscriber
+
+# Docker Compose setup
+DOCKER_COMPOSE=docker-compose
+
+# Database connection
+DB_URL=postgres://upvest:upvest@localhost:5432/upvest?sslmode=disable
+MIGRATIONS_DIR=schema/migrations
 
 dep:
 	@echo "Handling dependencies..."
@@ -14,44 +22,55 @@ fmt:
 	@echo "Formatting Go code..."
 	go fmt ./...
 
-build:
-	@echo "Building Go service..."
-	go build -o $(SERVICE_NAME) ./cmd/$(SERVICE_NAME)
+build-publisher:
+	@echo "Building Publisher service..."
+	go build -o $(PUBLISHER_NAME) ./cmd/upvest-api-publisher
 
-run: build
-	@echo "Building and running Go service..."
-	./$(SERVICE_NAME)
+build-subscriber:
+	@echo "Building Subscriber service..."
+	go build -o $(SUBSCRIBER_NAME) ./cmd/upvest-api-subscriber
 
-test:
-	@echo "Running tests..."
-	go test -v ./...
+build-all: build-publisher build-subscriber
 
+run-publisher: build-publisher
+	@echo "Running Publisher service..."
+	./$(PUBLISHER_NAME)
+
+run-subscriber: build-subscriber
+	@echo "Running Subscriber service..."
+	./$(SUBSCRIBER_NAME)
+
+# Docker Compose commands
 up:
-	@echo "Starting Go service and PostgreSQL database..."
+	@echo "Starting all services..."
 	$(DOCKER_COMPOSE) up --build -d
-	@$(DOCKER_COMPOSE) logs -f upvest-api
+	@$(DOCKER_COMPOSE) logs -f upvest-api-publisher upvest-api-subscriber
 
 down:
-	@echo "Stopping Go service and PostgreSQL database..."
+	@echo "Stopping all services..."
 	$(DOCKER_COMPOSE) down
 
 clean:
 	@echo "Cleaning up..."
-	rm -f $(SERVICE_NAME)
+	rm -f $(PUBLISHER_NAME) $(SUBSCRIBER_NAME)
 	$(DOCKER_COMPOSE) down -v
 
 migrate-create:
 	@echo "Creating new migration..."
-	goose -dir schema/migrations create $(NAME) sql
+	goose -dir $(MIGRATIONS_DIR) create $(NAME) sql
 
 migrate-up:
-	@echo "Running up migrations..."
-	goose -dir schema/migrations postgres "$(DB_URL)" up
+	@echo "Running database migrations..."
+	goose -dir $(MIGRATIONS_DIR) postgres "$(DB_URL)" up
 
 migrate-down:
 	@echo "Rolling back the last migration..."
-	goose -dir schema/migrations postgres "$(DB_URL)" down
+	goose -dir $(MIGRATIONS_DIR) postgres "$(DB_URL)" down
 
 migrate-status:
 	@echo "Checking migration status..."
-	goose -dir schema/migrations postgres "$(DB_URL)" status
+	goose -dir $(MIGRATIONS_DIR) postgres "$(DB_URL)" status
+
+test:
+	@echo "Running tests..."
+	go test -v ./...

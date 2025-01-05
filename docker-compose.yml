@@ -1,16 +1,20 @@
 services:
-  upvest-api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
     env_file:
       - .env
-    depends_on:
-      - postgres
+    ports:
+      - "5432:5432"
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "upvest"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
   kafka:
     image: bitnami/kafka:3.9.0
@@ -22,21 +26,52 @@ services:
     ports:
       - "9092:9092"
     networks:
-        - app-network
-    logging:
-      driver: "none"
+      - app-network
 
   zookeeper:
-      image: bitnami/zookeeper:3.7.0
-      container_name: zookeeper
-      env_file:
-        - .env
-      ports:
-          - "2181:2181"
-      networks:
-          - app-network
-      logging:
-        driver: "none"
+    image: bitnami/zookeeper:3.7.0
+    container_name: zookeeper
+    env_file:
+      - .env
+    ports:
+      - "2181:2181"
+    networks:
+      - app-network
+
+  upvest-api-publisher:
+    build:
+      context: .
+      dockerfile: Dockerfile.publisher
+    container_name: upvest-api-publisher
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  upvest-api-subscriber:
+    build:
+      context: .
+      dockerfile: Dockerfile.subscriber
+    container_name: upvest-api-subscriber
+    ports:
+      - "8081:8081"
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+
 networks:
   app-network:
     driver: bridge
+
