@@ -1,0 +1,64 @@
+# Ashwin Gopalsamy's .gitignore Template for Devs
+
+# IntelliJ specific files
+.idea/
+*.iml
+
+# VSCode specific files
+.vscode/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+*.log.*
+debug.log
+error.log
+
+# Go binaries and build output
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.out
+*.test
+
+# Go workspace directories
+/bin/
+/obj/
+
+# Go workspace files
+go.work
+go.work.sum
+
+# Environment files (store secrets and tokens)
+.env
+.env.local
+.env.*.local
+*.env
+
+# Configuration files that may contain credentials
+config/secrets.yaml
+config/secrets.json
+config/*.json
+config/*.yaml
+
+# API keys and tokens
+api_keys.json
+tokens.json
+
+# Database credentials and configuration
+database.yml
+db_credentials.yml
+db_secrets.json
+
+# AWS credentials
+.aws/
+.aws-sdk/
+
+# Docker configuration with sensitive data
+docker-compose.override.yml
+*.docker.env
