@@ -7,16 +7,16 @@ import (
 	"github.com/ashwingopalsamy/upvest-api/internal/domain"
 	"github.com/ashwingopalsamy/upvest-api/internal/kafka"
 	"github.com/ashwingopalsamy/upvest-api/internal/pkg/repository"
-	"github.com/ashwingopalsamy/upvest-api/internal/pkg/util/writer"
+	"github.com/ashwingopalsamy/upvest-api/internal/util/writer"
 	log "github.com/sirupsen/logrus"
 )
 
 type UserHandler struct {
 	repo      repository.UserRepository
-	publisher kafka.Publisher
+	publisher kafka.PublisherInterface
 }
 
-func NewUserHandler(repo repository.UserRepository, publisher kafka.Publisher) *UserHandler {
+func NewUserHandler(repo repository.UserRepository, publisher kafka.PublisherInterface) *UserHandler {
 	return &UserHandler{
 		repo:      repo,
 		publisher: publisher,
@@ -26,19 +26,19 @@ func NewUserHandler(repo repository.UserRepository, publisher kafka.Publisher) *
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var user domain.User
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		writer.WriteErrJSON(w, http.StatusBadRequest, "Invalid Request", "request body could not be parsed")
+		writer.WriteErrJSON(w, http.StatusBadRequest, ErrTitleInvalidRequest, ErrMsgInvalidRequestBody)
 		return
 	}
 
 	if err := user.Validate(); err != nil {
-		writer.WriteErrJSON(w, http.StatusBadRequest, "Validation Error", err.Error())
+		writer.WriteErrJSON(w, http.StatusBadRequest, ErrTitleValidationError, err.Error())
 		return
 	}
 
 	createdUser, err := h.repo.CreateUser(r.Context(), &user)
 	if err != nil {
 		log.Error(err)
-		writer.WriteErrJSON(w, http.StatusInternalServerError, "Database Error", "failed to create user")
+		writer.WriteErrJSON(w, http.StatusInternalServerError, ErrTitleDatabaseError, ErrMsgCreateUserFailed)
 		return
 	}
 
@@ -49,11 +49,12 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	eventBytes, err := json.Marshal(event)
 	if err != nil {
-		writer.WriteErrJSON(w, http.StatusInternalServerError, "Kafka Error", "failed to marshal event")
+		writer.WriteErrJSON(w, http.StatusInternalServerError, ErrTitleKafkaError, ErrMsgMarshalEventFailed)
+		return
 	}
 
 	if err := h.publisher.Publish(r.Context(), []byte(createdUser.ID), eventBytes); err != nil {
-		writer.WriteErrJSON(w, http.StatusInternalServerError, "Kafka Error", "failed to emit user creation event")
+		writer.WriteErrJSON(w, http.StatusInternalServerError, ErrTitleKafkaError, ErrMsgEmitEventFailed)
 		return
 	}
 

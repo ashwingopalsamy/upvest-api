@@ -6,7 +6,7 @@ SUBSCRIBER_NAME=upvest-api-subscriber
 DOCKER_COMPOSE=docker-compose
 
 # Database connection
-DB_URL=postgres://upvest:upvest@localhost:5432/upvest?sslmode=disable
+DB_DSN=postgres://upvest:upvest@localhost:5432/upvest?sslmode=disable
 MIGRATIONS_DIR=schema/migrations
 
 dep:
@@ -61,15 +61,15 @@ migrate-create:
 
 migrate-up:
 	@echo "Running database migrations..."
-	goose -dir $(MIGRATIONS_DIR) postgres "$(DB_URL)" up
+	goose -dir $(MIGRATIONS_DIR) postgres "$(DB_DSN)" up
 
 migrate-down:
 	@echo "Rolling back the last migration..."
-	goose -dir $(MIGRATIONS_DIR) postgres "$(DB_URL)" down
+	goose -dir $(MIGRATIONS_DIR) postgres "$(DB_DSN)" down
 
 migrate-status:
 	@echo "Checking migration status..."
-	goose -dir $(MIGRATIONS_DIR) postgres "$(DB_URL)" status
+	goose -dir $(MIGRATIONS_DIR) postgres "$(DB_DSN)" status
 
 test:
 	@echo "Running tests..."

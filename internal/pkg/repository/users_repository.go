@@ -19,7 +19,7 @@ func (r *PostgresUserRepository) CreateUser(ctx context.Context, user *domain.Us
 	err = r.db.QueryRowContext(ctx, queryInsertUsers,
 		user.FirstName, user.LastName, user.Salutation, user.Title,
 		user.BirthDate, user.BirthCity, user.BirthCountry, user.BirthName,
-		nationalities, postalAddress, address, "ACTIVE",
+		nationalities, postalAddress, address, fieldStatusActive,
 	).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {

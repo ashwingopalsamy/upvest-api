@@ -10,7 +10,7 @@ import (
 )
 
 type Config struct {
-	DBURL string
+	DbDSN string
 }
 
 func main() {
@@ -21,11 +21,11 @@ func main() {
 
 	// Parse configuration
 	config := Config{
-		DBURL: os.Getenv("DBURL"),
+		DbDSN: os.Getenv("DB_DSN"),
 	}
 
 	// Init Database
-	db, err := initDatabase(config.DBURL)
+	db, err := initDatabase(config.DbDSN)
 	if err != nil {
 		log.Fatalf("failed to initialize database: %v", err)
 	}

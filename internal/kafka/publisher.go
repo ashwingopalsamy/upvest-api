@@ -1,3 +1,4 @@
+//go:generate mockery --name=PublisherInterface --output=../util/mocks --outpkg=mocks
 package kafka
 
 import (
@@ -6,6 +7,11 @@ import (
 
 	"github.com/segmentio/kafka-go"
 )
+
+type PublisherInterface interface {
+	Publish(ctx context.Context, key, value []byte) error
+	Close() error
+}
 
 type Publisher struct {
 	writer *kafka.Writer
