@@ -9,6 +9,7 @@ const (
 
 	// Error Messages
 	ErrMsgCreateUserFailed   = "failed to create user"
+	ErrMsgFailedToFetchUsers = "failed to fetch users"
 	ErrMsgEmitEventFailed    = "failed to emit user creation event"
 	ErrMsgInvalidRequestBody = "request body could not be parsed"
 	ErrMsgMarshalEventFailed = "failed to marshal event"

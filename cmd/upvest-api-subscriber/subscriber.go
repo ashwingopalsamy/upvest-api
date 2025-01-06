@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/ashwingopalsamy/upvest-api/internal/kafka"
+	"github.com/ashwingopalsamy/upvest-api/internal/event"
 	log "github.com/sirupsen/logrus"
 )
 
-var subscriber *kafka.Subscriber
+var subscriber *event.Subscriber
 
 func initKafkaSubscriber() {
-	subscriber = kafka.NewSubscriber("kafka:9092", "user-events", "user-subscriber-group")
+	subscriber = event.NewSubscriber("kafka:9092", "user-events", "user-subscriber-group")
 	log.Info("Kafka subscriber initialized")
 }
 

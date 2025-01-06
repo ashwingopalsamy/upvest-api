@@ -41,7 +41,7 @@ run-subscriber: build-subscriber
 	./$(SUBSCRIBER_NAME)
 
 # Docker Compose commands
-up:
+up: migrate-up
 	@echo "Starting all services..."
 	$(DOCKER_COMPOSE) up --build -d
 	@$(DOCKER_COMPOSE) logs -f upvest-api-publisher upvest-api-subscriber

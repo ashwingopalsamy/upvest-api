@@ -9,6 +9,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const subscriberPortAddr = ":8081"
+
 type Config struct {
 	DbDSN string
 }
@@ -17,7 +19,7 @@ func main() {
 	// Setup Logging
 	log.SetFormatter(&log.JSONFormatter{})
 	log.SetLevel(log.InfoLevel)
-	log.Info("starting Upvest API service")
+	log.Info("starting Upvest API Subscriber service")
 
 	// Parse configuration
 	config := Config{
@@ -46,8 +48,8 @@ func main() {
 	router.HandleFunc("/health", pingHTTP).Methods("GET")
 
 	// Init HTTP Server
-	log.Info("starting server on :8081")
-	if err := http.ListenAndServe(":8081", router); err != nil {
+	log.Info("starting server on %d", subscriberPortAddr)
+	if err := http.ListenAndServe(subscriberPortAddr, router); err != nil {
 		log.Fatalf("failed to start server: %v", err)
 	}
 }
