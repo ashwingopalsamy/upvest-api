@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -9,6 +11,7 @@ import (
 	"github.com/ashwingopalsamy/upvest-api/internal/event"
 	"github.com/ashwingopalsamy/upvest-api/internal/pkg/repository"
 	"github.com/ashwingopalsamy/upvest-api/internal/util/writer"
+	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -101,4 +104,24 @@ func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		},
 		"data": users,
 	})
+}
+
+func (h *UserHandler) GetUserByID(w http.ResponseWriter, r *http.Request) {
+	userID := mux.Vars(r)["user_id"]
+	if userID == "" {
+		writer.WriteErrJSON(w, http.StatusBadRequest, "invalid_request", "user_id is required")
+		return
+	}
+
+	user, err := h.repo.GetUserByID(r.Context(), userID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			writer.WriteErrJSON(w, http.StatusNotFound, "not_found", "user does not exist")
+		} else {
+			writer.WriteErrJSON(w, http.StatusInternalServerError, "database_error", "failed to fetch user")
+		}
+		return
+	}
+
+	writer.WriteJSON(w, http.StatusOK, user)
 }
