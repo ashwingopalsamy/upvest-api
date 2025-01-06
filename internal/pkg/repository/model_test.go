@@ -120,9 +120,11 @@ func Test_GetAllUsers_Success(t *testing.T) {
 		AddRow("2", "2025-01-02T00:00:00Z", "2025-01-02T00:00:00Z", "Jane", "Schmidt", "", "PROF", "1999-01-01",
 			"Munich", "DE", "", `["DE","US"]`, `{"address_line1":"789 Park Ave"}`, `{"address_line1":"123 High St"}`, "ACTIVE")
 
-	mock.ExpectQuery(`SELECT id, created_at, updated_at`).WillReturnRows(rows)
+	mock.ExpectQuery(`SELECT id, created_at, updated_at`).
+		WithArgs(100, 0).
+		WillReturnRows(rows)
 
-	users, err := repo.GetAllUsers(context.Background())
+	users, err := repo.GetAllUsers(context.Background(), 0, 100, "created_at", "ASC")
 
 	assert.NoError(t, err)
 	assert.NotNil(t, users)
@@ -136,9 +138,53 @@ func Test_GetAllUsers_Success(t *testing.T) {
 func Test_GetAllUsers_Failure(t *testing.T) {
 	mock.ExpectQuery(`SELECT id, created_at, updated_at`).WillReturnError(sql.ErrConnDone)
 
-	users, err := repo.GetAllUsers(context.Background())
+	users, err := repo.GetAllUsers(context.Background(), 0, 100, "created_at", "ASC")
 
 	assert.Error(t, err)
 	assert.Nil(t, users)
-	assert.EqualError(t, err, sql.ErrConnDone.Error())
+	assert.EqualError(t, err, "failed to execute query: sql: connection is already closed")
+}
+
+// Test_GetAllUsers_InvalidSorting tests invalid sorting and ensures it defaults to created_at
+func Test_GetAllUsers_InvalidSorting(t *testing.T) {
+	rows := sqlmock.NewRows([]string{
+		"id", "created_at", "updated_at", "first_name", "last_name", "salutation", "title", "birth_date",
+		"birth_city", "birth_country", "birth_name", "nationalities", "postal_address", "address", "status",
+	}).AddRow("1", "2025-01-01T00:00:00Z", "2025-01-01T00:00:00Z", "Jason", "Schmidt", "", "", "2000-01-01",
+		"Berlin", "DE", "", `["DE"]`, `{"address_line1":"123 Main St"}`, `{"address_line1":"456 High St"}`, "ACTIVE")
+	
+	mock.ExpectQuery(`SELECT id, created_at, updated_at, first_name, last_name, salutation, title, birth_date, 
+		       birth_city, birth_country, birth_name, nationalities, postal_address, address, status 
+		FROM users ORDER BY created_at ASC LIMIT \$1 OFFSET \$2`).
+		WithArgs(100, 0).
+		WillReturnRows(rows)
+
+	users, err := repo.GetAllUsers(context.Background(), 0, 100, "invalid_field", "invalid_order")
+
+	assert.NoError(t, err)
+	assert.NotNil(t, users)
+	assert.Len(t, users, 1)
+	assert.Equal(t, "Jason", users[0].FirstName)
+}
+
+// Test_GetAllUsers_InvalidPagination tests invalid pagination parameters
+func Test_GetAllUsers_InvalidPagination(t *testing.T) {
+	rows := sqlmock.NewRows([]string{
+		"id", "created_at", "updated_at", "first_name", "last_name", "salutation", "title", "birth_date",
+		"birth_city", "birth_country", "birth_name", "nationalities", "postal_address", "address", "status",
+	}).AddRow("1", "2025-01-01T00:00:00Z", "2025-01-01T00:00:00Z", "Mark", "Smith", "", "", "1985-01-01",
+		"Berlin", "DE", "", `["DE"]`, `{"address_line1":"789 Main St"}`, `{"address_line1":"123 Side St"}`, "ACTIVE")
+
+	mock.ExpectQuery(`SELECT id, created_at, updated_at, first_name, last_name, salutation, title, birth_date, 
+		       birth_city, birth_country, birth_name, nationalities, postal_address, address, status 
+		FROM users ORDER BY created_at ASC LIMIT \$1 OFFSET \$2`).
+		WithArgs(200, 0).
+		WillReturnRows(rows)
+
+	users, err := repo.GetAllUsers(context.Background(), 0, 200, "created_at", "ASC")
+
+	assert.NoError(t, err)
+	assert.NotNil(t, users)
+	assert.Len(t, users, 1)
+	assert.Equal(t, "Mark", users[0].FirstName)
 }

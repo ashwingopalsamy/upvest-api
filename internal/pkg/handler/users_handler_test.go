@@ -143,9 +143,9 @@ func (suite *UserHandlerTestSuite) TestGetAllUsers_Success() {
 		{ID: "2", FirstName: "Jane", LastName: "Schmidt"},
 	}
 
-	suite.mockRepo.On("GetAllUsers", mock.Anything).Return(users, nil)
-
-	req := httptest.NewRequest(http.MethodGet, "/users", nil)
+	suite.mockRepo.On("GetAllUsers", mock.Anything, 0, 100, "created_at", "ASC").Return(users, nil)
+	
+	req := httptest.NewRequest(http.MethodGet, "/users?offset=0&limit=100&sort=created_at&order=ASC", nil)
 	w := httptest.NewRecorder()
 
 	suite.handler.GetAllUsers(w, req)
@@ -164,14 +164,18 @@ func (suite *UserHandlerTestSuite) TestGetAllUsers_Success() {
 
 	suite.Equal(2, int(resp.Meta["count"].(float64)))
 	suite.Equal("John", resp.Data[0].FirstName)
+	suite.Equal(0, int(resp.Meta["offset"].(float64)))
+	suite.Equal(100, int(resp.Meta["limit"].(float64)))
+	suite.Equal("created_at", resp.Meta["sort"])
+	suite.Equal("ASC", resp.Meta["order"])
 
 	suite.mockRepo.AssertExpectations(suite.T())
 }
 
 func (suite *UserHandlerTestSuite) TestGetAllUsers_DatabaseFailure() {
-	suite.mockRepo.On("GetAllUsers", mock.Anything).Return(nil, errors.New("database error"))
+	suite.mockRepo.On("GetAllUsers", mock.Anything, 0, 100, "created_at", "ASC").Return(nil, errors.New("database error"))
 
-	req := httptest.NewRequest(http.MethodGet, "/users", nil)
+	req := httptest.NewRequest(http.MethodGet, "/users?offset=0&limit=100&sort=created_at&order=ASC", nil)
 	w := httptest.NewRecorder()
 
 	suite.handler.GetAllUsers(w, req)

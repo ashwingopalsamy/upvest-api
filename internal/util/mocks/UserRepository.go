@@ -44,9 +44,9 @@ func (_m *UserRepository) CreateUser(ctx context.Context, user *domain.User) (*d
 	return r0, r1
 }
 
-// GetAllUsers provides a mock function with given fields: ctx
-func (_m *UserRepository) GetAllUsers(ctx context.Context) ([]domain.User, error) {
-	ret := _m.Called(ctx)
+// GetAllUsers provides a mock function with given fields: ctx, offset, limit, sort, order
+func (_m *UserRepository) GetAllUsers(ctx context.Context, offset int, limit int, sort string, order string) ([]domain.User, error) {
+	ret := _m.Called(ctx, offset, limit, sort, order)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAllUsers")
@@ -54,19 +54,19 @@ func (_m *UserRepository) GetAllUsers(ctx context.Context) ([]domain.User, error
 
 	var r0 []domain.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) ([]domain.User, error)); ok {
-		return rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, int, int, string, string) ([]domain.User, error)); ok {
+		return rf(ctx, offset, limit, sort, order)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) []domain.User); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, int, int, string, string) []domain.User); ok {
+		r0 = rf(ctx, offset, limit, sort, order)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]domain.User)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, int, int, string, string) error); ok {
+		r1 = rf(ctx, offset, limit, sort, order)
 	} else {
 		r1 = ret.Error(1)
 	}
