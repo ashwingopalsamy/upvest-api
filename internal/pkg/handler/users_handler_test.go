@@ -77,7 +77,6 @@ func (suite *UserHandlerTestSuite) Test_CreateUser_Success() {
 	err := json.NewDecoder(res.Body).Decode(&resp)
 	suite.NoError(err)
 	suite.Equal("Rob", resp.FirstName)
-
 	suite.mockRepo.AssertExpectations(suite.T())
 	suite.mockPublisher.AssertExpectations(suite.T())
 }

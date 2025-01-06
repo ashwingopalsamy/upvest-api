@@ -170,3 +170,4 @@ func (r *userRepo) OffboardUser(ctx context.Context, userID string) error {
 
 	return nil
 }
+

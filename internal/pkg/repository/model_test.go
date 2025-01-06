@@ -259,3 +259,4 @@ func Test_OffboardUser_DatabaseError(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to update user status: database error")
 }
+
