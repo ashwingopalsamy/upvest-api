@@ -82,3 +82,63 @@ func Test_CreateUser_Success(t *testing.T) {
 	assert.Equal(t, "123", createdUser.ID)
 	assert.Equal(t, "2025-01-01T00:00:00Z", createdUser.CreatedAt)
 }
+
+// Test_CreateUser_Failure tests the failure case for CreateUser
+func Test_CreateUser_Failure(t *testing.T) {
+	mockUser := &domain.User{
+		FirstName:     "Rob",
+		LastName:      "Smith",
+		BirthDate:     "1999-01-01",
+		BirthCity:     "Berlin",
+		BirthCountry:  "DE",
+		Nationalities: []string{"DE", "US"},
+		Address: domain.Address{
+			AddressLine1: "123 Main St",
+			Postcode:     "12345",
+			City:         "Berlin",
+			Country:      "DE",
+		},
+	}
+
+	mock.ExpectQuery(`INSERT INTO users`).WillReturnError(sql.ErrConnDone)
+
+	createdUser, err := repo.CreateUser(context.Background(), mockUser)
+
+	assert.Error(t, err)
+	assert.Nil(t, createdUser)
+	assert.EqualError(t, err, sql.ErrConnDone.Error())
+}
+
+// Test_GetAllUsers_Success tests the success case for GetAllUsers
+func Test_GetAllUsers_Success(t *testing.T) {
+	rows := sqlmock.NewRows([]string{
+		"id", "created_at", "updated_at", "first_name", "last_name", "salutation", "title", "birth_date",
+		"birth_city", "birth_country", "birth_name", "nationalities", "postal_address", "address", "status",
+	}).
+		AddRow("1", "2025-01-01T00:00:00Z", "2025-01-01T00:00:00Z", "John", "Schmidt", "", "DR", "1998-01-01",
+			"Berlin", "DE", "", `["DE"]`, `{"address_line1":"123 Main St"}`, `{"address_line1":"456 High St"}`, "ACTIVE").
+		AddRow("2", "2025-01-02T00:00:00Z", "2025-01-02T00:00:00Z", "Jane", "Schmidt", "", "PROF", "1999-01-01",
+			"Munich", "DE", "", `["DE","US"]`, `{"address_line1":"789 Park Ave"}`, `{"address_line1":"123 High St"}`, "ACTIVE")
+
+	mock.ExpectQuery(`SELECT id, created_at, updated_at`).WillReturnRows(rows)
+
+	users, err := repo.GetAllUsers(context.Background())
+
+	assert.NoError(t, err)
+	assert.NotNil(t, users)
+	assert.Len(t, users, 2)
+	assert.Equal(t, "1", users[0].ID)
+	assert.Equal(t, "Jane", users[1].FirstName)
+	assert.Equal(t, []string{"DE", "US"}, users[1].Nationalities)
+}
+
+// Test_GetAllUsers_Failure tests the failure case for GetAllUsers
+func Test_GetAllUsers_Failure(t *testing.T) {
+	mock.ExpectQuery(`SELECT id, created_at, updated_at`).WillReturnError(sql.ErrConnDone)
+
+	users, err := repo.GetAllUsers(context.Background())
+
+	assert.Error(t, err)
+	assert.Nil(t, users)
+	assert.EqualError(t, err, sql.ErrConnDone.Error())
+}
