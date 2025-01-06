@@ -40,24 +40,15 @@ run-subscriber: build-subscriber
 	@echo "Running Subscriber service..."
 	./$(SUBSCRIBER_NAME)
 
-# Docker Compose commands
-up: migrate-up
-	@echo "Starting all services..."
-	$(DOCKER_COMPOSE) up --build -d
-	@$(DOCKER_COMPOSE) logs -f upvest-api-publisher upvest-api-subscriber
+test:
+	@echo "Running tests..."
+	go test -v ./...
 
-down:
-	@echo "Stopping all services..."
-	$(DOCKER_COMPOSE) down
-
-clean:
-	@echo "Cleaning up..."
-	rm -f $(PUBLISHER_NAME) $(SUBSCRIBER_NAME)
-	$(DOCKER_COMPOSE) down -v
 
 migrate-create:
 	@echo "Creating new migration..."
 	goose -dir $(MIGRATIONS_DIR) create $(NAME) sql
+
 
 migrate-up:
 	@echo "Running database migrations..."
@@ -71,6 +62,20 @@ migrate-status:
 	@echo "Checking migration status..."
 	goose -dir $(MIGRATIONS_DIR) postgres "$(DB_DSN)" status
 
-test:
-	@echo "Running tests..."
-	go test -v ./...
+
+# Docker Compose commands
+up:
+	@echo "Starting all services..."
+	$(DOCKER_COMPOSE) up --build -d
+	make migrate-up
+	@$(DOCKER_COMPOSE) logs -f upvest-api-publisher upvest-api-subscriber
+
+down:
+	@echo "Stopping all services..."
+	$(DOCKER_COMPOSE) down
+
+clean:
+	@echo "Cleaning up..."
+	rm -f $(PUBLISHER_NAME) $(SUBSCRIBER_NAME)
+	$(DOCKER_COMPOSE) down -v
+

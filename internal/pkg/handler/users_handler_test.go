@@ -3,6 +3,7 @@ package handler_test
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"github.com/ashwingopalsamy/upvest-api/internal/domain"
 	"github.com/ashwingopalsamy/upvest-api/internal/pkg/handler"
 	"github.com/ashwingopalsamy/upvest-api/internal/util/mocks"
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
@@ -75,8 +77,7 @@ func (suite *UserHandlerTestSuite) Test_CreateUser_Success() {
 	err := json.NewDecoder(res.Body).Decode(&resp)
 	suite.NoError(err)
 	suite.Equal("Rob", resp.FirstName)
-
-	// Assert expectations
+	
 	suite.mockRepo.AssertExpectations(suite.T())
 	suite.mockPublisher.AssertExpectations(suite.T())
 }
@@ -144,7 +145,7 @@ func (suite *UserHandlerTestSuite) TestGetAllUsers_Success() {
 	}
 
 	suite.mockRepo.On("GetAllUsers", mock.Anything, 0, 100, "created_at", "ASC").Return(users, nil)
-	
+
 	req := httptest.NewRequest(http.MethodGet, "/users?offset=0&limit=100&sort=created_at&order=ASC", nil)
 	w := httptest.NewRecorder()
 
@@ -186,4 +187,42 @@ func (suite *UserHandlerTestSuite) TestGetAllUsers_DatabaseFailure() {
 	suite.Equal(http.StatusInternalServerError, res.StatusCode)
 
 	suite.mockRepo.AssertExpectations(suite.T())
+}
+
+func (suite *UserHandlerTestSuite) TestGetUserByID_Success() {
+	user := &domain.User{ID: "1", FirstName: "John", LastName: "Doe"}
+
+	suite.mockRepo.On("GetUserByID", mock.Anything, "1").Return(user, nil)
+
+	req := httptest.NewRequest(http.MethodGet, "/users/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"user_id": "1"})
+	w := httptest.NewRecorder()
+
+	suite.handler.GetUserByID(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	suite.Equal(http.StatusOK, res.StatusCode)
+
+	var resp domain.User
+	err := json.NewDecoder(res.Body).Decode(&resp)
+	suite.NoError(err)
+	suite.Equal("John", resp.FirstName)
+	suite.Equal("Doe", resp.LastName)
+}
+
+func (suite *UserHandlerTestSuite) TestGetUserByID_NotFound() {
+	suite.mockRepo.On("GetUserByID", mock.Anything, "1").Return(nil, sql.ErrNoRows)
+
+	req := httptest.NewRequest(http.MethodGet, "/users/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"user_id": "1"})
+	w := httptest.NewRecorder()
+
+	suite.handler.GetUserByID(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	suite.Equal(http.StatusNotFound, res.StatusCode)
 }
