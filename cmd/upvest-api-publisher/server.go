@@ -14,7 +14,7 @@ func NewServer(db *sql.DB, publisher *kafka.Publisher) http.Handler {
 	router := mux.NewRouter()
 
 	userRepo := repository.NewUserRepository(db)
-	userHandler := handler.NewUserHandler(userRepo, *publisher)
+	userHandler := handler.NewUserHandler(userRepo, publisher)
 
 	router.HandleFunc("/health", pingHTTP).Methods("GET")
 

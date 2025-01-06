@@ -9,9 +9,9 @@ import (
 )
 
 // initDatabase initializes and returns a database connection.
-func initDatabase(dbURL string) (*sql.DB, error) {
+func initDatabase(dbDSN string) (*sql.DB, error) {
 	// Open the database connection
-	db, err := sql.Open("postgres", dbURL)
+	db, err := sql.Open("postgres", dbDSN)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database connection: %v", err)
 	}
