@@ -23,6 +23,7 @@ func NewServer(db *sql.DB, publisher *event.Publisher) http.Handler {
 	router.Handle("/users",
 		middleware.ExtractPagingParams(http.HandlerFunc(userHandler.GetAllUsers))).Methods(http.MethodGet)
 	router.HandleFunc("/users/{user_id}", userHandler.GetUserByID).Methods(http.MethodGet)
+	router.HandleFunc("/users/{user_id}", userHandler.DeleteUser).Methods(http.MethodDelete)
 
 	return router
 }

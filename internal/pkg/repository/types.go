@@ -12,3 +12,7 @@ var queryReadUsers = `SELECT id, created_at, updated_at, first_name, last_name, 
 FROM users
 ORDER BY %s %s
 LIMIT $1 OFFSET $2`
+
+var queryOffboardUser = `UPDATE users 
+		SET status = $1, updated_at = NOW()
+		WHERE id = $2`
