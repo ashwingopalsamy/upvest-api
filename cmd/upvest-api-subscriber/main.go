@@ -19,7 +19,7 @@ func main() {
 	// Setup Logging
 	log.SetFormatter(&log.JSONFormatter{})
 	log.SetLevel(log.InfoLevel)
-	log.Info("starting Upvest API service")
+	log.Info("starting Upvest API Subscriber service")
 
 	// Parse configuration
 	config := Config{

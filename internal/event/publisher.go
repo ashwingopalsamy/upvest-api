@@ -1,5 +1,5 @@
 //go:generate mockery --name=PublisherInterface --output=../util/mocks --outpkg=mocks
-package kafka
+package event
 
 import (
 	"context"
