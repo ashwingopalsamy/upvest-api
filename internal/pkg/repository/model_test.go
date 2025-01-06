@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"os"
 	"testing"
 
@@ -152,7 +153,7 @@ func Test_GetAllUsers_InvalidSorting(t *testing.T) {
 		"birth_city", "birth_country", "birth_name", "nationalities", "postal_address", "address", "status",
 	}).AddRow("1", "2025-01-01T00:00:00Z", "2025-01-01T00:00:00Z", "Jason", "Schmidt", "", "", "2000-01-01",
 		"Berlin", "DE", "", `["DE"]`, `{"address_line1":"123 Main St"}`, `{"address_line1":"456 High St"}`, "ACTIVE")
-	
+
 	mock.ExpectQuery(`SELECT id, created_at, updated_at, first_name, last_name, salutation, title, birth_date, 
 		       birth_city, birth_country, birth_name, nationalities, postal_address, address, status 
 		FROM users ORDER BY created_at ASC LIMIT \$1 OFFSET \$2`).
@@ -187,4 +188,32 @@ func Test_GetAllUsers_InvalidPagination(t *testing.T) {
 	assert.NotNil(t, users)
 	assert.Len(t, users, 1)
 	assert.Equal(t, "Mark", users[0].FirstName)
+}
+
+func Test_GetUserByID_Success(t *testing.T) {
+	row := sqlmock.NewRows([]string{
+		"id", "created_at", "updated_at", "first_name", "last_name", "salutation", "title", "birth_date",
+		"birth_city", "birth_country", "birth_name", "nationalities", "postal_address", "address", "status",
+	}).AddRow("1", "2025-01-01T00:00:00Z", "2025-01-01T00:00:00Z", "Jason", "Schmidt", "SALUTATION_MALE", "DR",
+		"2001-01-01", "Berlin", "DE", "Schmidt", `["DE"]`, `{"address_line1":"123 Main St"}`,
+		`{"address_line1":"123 Main St"}`, "ACTIVE")
+
+	mock.ExpectQuery(`SELECT id, created_at, updated_at`).WithArgs("1").WillReturnRows(row)
+
+	user, err := repo.GetUserByID(context.Background(), "1")
+
+	assert.NoError(t, err)
+	assert.NotNil(t, user)
+	assert.Equal(t, "Jason", user.FirstName)
+	assert.Equal(t, "Schmidt", user.LastName)
+}
+
+func Test_GetUserByID_NotFound(t *testing.T) {
+	mock.ExpectQuery(`SELECT id, created_at, updated_at`).WithArgs("1").WillReturnError(sql.ErrNoRows)
+
+	user, err := repo.GetUserByID(context.Background(), "1")
+
+	assert.Error(t, err)
+	assert.Nil(t, user)
+	assert.True(t, errors.Is(err, sql.ErrNoRows))
 }
