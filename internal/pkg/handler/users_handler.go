@@ -125,3 +125,23 @@ func (h *UserHandler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 
 	writer.WriteJSON(w, http.StatusOK, user)
 }
+
+func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	userID := mux.Vars(r)["user_id"]
+	if userID == "" {
+		writer.WriteErrJSON(w, http.StatusBadRequest, "invalid_request", "user_id is required")
+		return
+	}
+
+	err := h.repo.OffboardUser(r.Context(), userID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			writer.WriteErrJSON(w, http.StatusNotFound, "not_found", "user does not exist")
+		} else {
+			writer.WriteErrJSON(w, http.StatusInternalServerError, "database_error", "failed to offboard user")
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusAccepted)
+}

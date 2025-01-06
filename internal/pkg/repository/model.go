@@ -15,6 +15,7 @@ type UserRepository interface {
 	CreateUser(ctx context.Context, user *domain.User) (*domain.User, error)
 	GetAllUsers(ctx context.Context, offset, limit int, sort, order string) ([]domain.User, error)
 	GetUserByID(ctx context.Context, userID string) (*domain.User, error)
+	OffboardUser(ctx context.Context, userID string) error
 }
 
 type userRepo struct {
@@ -150,4 +151,22 @@ func (r *userRepo) GetUserByID(ctx context.Context, userID string) (*domain.User
 	}
 
 	return &user, nil
+}
+
+func (r *userRepo) OffboardUser(ctx context.Context, userID string) error {
+	result, err := r.db.ExecContext(ctx, queryOffboardUser, "OFFBOARDED", userID)
+	if err != nil {
+		return fmt.Errorf("failed to update user status: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to check rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
 }
