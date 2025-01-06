@@ -77,7 +77,7 @@ func (suite *UserHandlerTestSuite) Test_CreateUser_Success() {
 	err := json.NewDecoder(res.Body).Decode(&resp)
 	suite.NoError(err)
 	suite.Equal("Rob", resp.FirstName)
-	
+
 	suite.mockRepo.AssertExpectations(suite.T())
 	suite.mockPublisher.AssertExpectations(suite.T())
 }
@@ -225,4 +225,55 @@ func (suite *UserHandlerTestSuite) TestGetUserByID_NotFound() {
 	defer res.Body.Close()
 
 	suite.Equal(http.StatusNotFound, res.StatusCode)
+}
+
+func (suite *UserHandlerTestSuite) TestDeleteUser_Success() {
+	suite.mockRepo.On("OffboardUser", mock.Anything, "1").Return(nil)
+
+	req := httptest.NewRequest(http.MethodDelete, "/users/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"user_id": "1"})
+	w := httptest.NewRecorder()
+
+	suite.handler.DeleteUser(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	suite.Equal(http.StatusAccepted, res.StatusCode)
+
+	suite.mockRepo.AssertExpectations(suite.T())
+}
+
+func (suite *UserHandlerTestSuite) TestDeleteUser_NotFound() {
+	suite.mockRepo.On("OffboardUser", mock.Anything, "1").Return(sql.ErrNoRows)
+
+	req := httptest.NewRequest(http.MethodDelete, "/users/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"user_id": "1"})
+	w := httptest.NewRecorder()
+
+	suite.handler.DeleteUser(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	suite.Equal(http.StatusNotFound, res.StatusCode)
+
+	suite.mockRepo.AssertExpectations(suite.T())
+}
+
+func (suite *UserHandlerTestSuite) TestDeleteUser_DatabaseError() {
+	suite.mockRepo.On("OffboardUser", mock.Anything, "1").Return(errors.New("database error"))
+
+	req := httptest.NewRequest(http.MethodDelete, "/users/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"user_id": "1"})
+	w := httptest.NewRecorder()
+
+	suite.handler.DeleteUser(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	suite.Equal(http.StatusInternalServerError, res.StatusCode)
+
+	suite.mockRepo.AssertExpectations(suite.T())
 }

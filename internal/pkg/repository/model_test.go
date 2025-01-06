@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"testing"
 
@@ -216,4 +217,45 @@ func Test_GetUserByID_NotFound(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, user)
 	assert.True(t, errors.Is(err, sql.ErrNoRows))
+}
+
+func Test_OffboardUser_Success(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mock.ExpectExec(`UPDATE users SET status = \$1, updated_at = NOW\(\) WHERE id = \$2`).
+		WithArgs("OFFBOARDED", "123").
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	err := repo.OffboardUser(context.Background(), "123")
+
+	assert.NoError(t, err)
+}
+
+func Test_OffboardUser_NotFound(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mock.ExpectExec(`UPDATE users SET status = \$1, updated_at = NOW\(\) WHERE id = \$2`).
+		WithArgs("OFFBOARDED", "123").
+		WillReturnResult(sqlmock.NewResult(0, 0))
+
+	err := repo.OffboardUser(context.Background(), "123")
+
+	assert.Error(t, err)
+	assert.EqualError(t, err, sql.ErrNoRows.Error())
+}
+
+func Test_OffboardUser_DatabaseError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mock.ExpectExec(`UPDATE users SET status = \$1, updated_at = NOW\(\) WHERE id = \$2`).
+		WithArgs("OFFBOARDED", "123").
+		WillReturnError(fmt.Errorf("database error"))
+
+	err := repo.OffboardUser(context.Background(), "123")
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to update user status: database error")
 }
