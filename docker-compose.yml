@@ -29,7 +29,7 @@ services:
       - app-network
 
   zookeeper:
-    image: bitnami/zookeeper:3.7.0
+    image: bitnami/zookeeper:3.9.0
     container_name: zookeeper
     env_file:
       - .env
