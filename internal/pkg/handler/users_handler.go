@@ -3,9 +3,10 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/ashwingopalsamy/upvest-api/internal/domain"
-	"github.com/ashwingopalsamy/upvest-api/internal/kafka"
+	"github.com/ashwingopalsamy/upvest-api/internal/event"
 	"github.com/ashwingopalsamy/upvest-api/internal/pkg/repository"
 	"github.com/ashwingopalsamy/upvest-api/internal/util/writer"
 	log "github.com/sirupsen/logrus"
@@ -13,10 +14,10 @@ import (
 
 type UserHandler struct {
 	repo      repository.UserRepository
-	publisher kafka.PublisherInterface
+	publisher event.PublisherInterface
 }
 
-func NewUserHandler(repo repository.UserRepository, publisher kafka.PublisherInterface) *UserHandler {
+func NewUserHandler(repo repository.UserRepository, publisher event.PublisherInterface) *UserHandler {
 	return &UserHandler{
 		repo:      repo,
 		publisher: publisher,
@@ -66,16 +67,37 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
-	users, err := h.repo.GetAllUsers(r.Context())
+	// Parse query parameters
+	offsetStr := r.URL.Query().Get("offset")
+	limitStr := r.URL.Query().Get("limit")
+	sort := r.URL.Query().Get("sort")
+	order := r.URL.Query().Get("order")
+
+	// Default values
+	offset := 0
+	limit := 100
+
+	// Parse integers with error handling
+	if offsetVal, err := strconv.Atoi(offsetStr); err == nil && offsetVal >= 0 {
+		offset = offsetVal
+	}
+	if limitVal, err := strconv.Atoi(limitStr); err == nil && limitVal > 0 && limitVal <= 1000 {
+		limit = limitVal
+	}
+
+	users, err := h.repo.GetAllUsers(r.Context(), offset, limit, sort, order)
 	if err != nil {
 		writer.WriteErrJSON(w, http.StatusInternalServerError, ErrTitleDatabaseError, ErrMsgFailedToFetchUsers)
 		return
 	}
+
 	writer.WriteJSON(w, http.StatusOK, map[string]interface{}{
 		"meta": map[string]interface{}{
-			"count": len(users),
-			"sort":  "created_at",
-			"order": "ASC",
+			"count":  len(users),
+			"offset": offset,
+			"limit":  limit,
+			"sort":   sort,
+			"order":  order,
 		},
 		"data": users,
 	})

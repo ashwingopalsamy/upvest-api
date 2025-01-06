@@ -10,7 +10,7 @@ import (
 
 type UserRepository interface {
 	CreateUser(ctx context.Context, user *domain.User) (*domain.User, error)
-	GetAllUsers(ctx context.Context) ([]domain.User, error)
+	GetAllUsers(ctx context.Context, offset, limit int, sort, order string) ([]domain.User, error)
 }
 
 type userRepo struct {

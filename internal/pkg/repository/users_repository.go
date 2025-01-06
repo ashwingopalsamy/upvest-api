@@ -30,10 +30,20 @@ func (r *userRepo) CreateUser(ctx context.Context, user *domain.User) (*domain.U
 	return user, nil
 }
 
-func (r *userRepo) GetAllUsers(ctx context.Context) ([]domain.User, error) {
-	rows, err := r.db.QueryContext(ctx, queryReadUsers)
+func (r *userRepo) GetAllUsers(ctx context.Context, offset, limit int, sort, order string) ([]domain.User, error) {
+	// Validate and normalize sorting inputs
+	if sort != "created_at" && sort != "updated_at" {
+		sort = "created_at"
+	}
+	if order != "ASC" && order != "DESC" {
+		order = "ASC"
+	}
+
+	query := fmt.Sprintf(queryReadUsers, sort, order)
+
+	rows, err := r.db.QueryContext(ctx, query, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to execute query: %w", err)
 	}
 	defer rows.Close()
 
@@ -41,7 +51,7 @@ func (r *userRepo) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 	for rows.Next() {
 		var (
 			user          domain.User
-			nationalities string
+			nationalities sql.NullString
 			postalAddress sql.NullString
 			address       string
 		)
@@ -51,18 +61,26 @@ func (r *userRepo) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 			&user.Salutation, &user.Title, &user.BirthDate, &user.BirthCity, &user.BirthCountry,
 			&user.BirthName, &nationalities, &postalAddress, &address, &user.Status,
 		); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
 
 		// Deserializing the JSON fields
-		if err := json.Unmarshal([]byte(nationalities), &user.Nationalities); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal nationalities: %w", err)
+		if nationalities.Valid && nationalities.String != "" {
+			if err := json.Unmarshal([]byte(nationalities.String), &user.Nationalities); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal nationalities: %w", err)
+			}
+		} else {
+			user.Nationalities = nil
 		}
 
-		if postalAddress.Valid {
-			if err := json.Unmarshal([]byte(postalAddress.String), &user.PostalAddress); err != nil {
+		if postalAddress.Valid && postalAddress.String != "" {
+			var addr domain.Address
+			if err := json.Unmarshal([]byte(postalAddress.String), &addr); err != nil {
 				return nil, fmt.Errorf("failed to unmarshal postal_address: %w", err)
 			}
+			user.PostalAddress = &addr
+		} else {
+			user.PostalAddress = nil
 		}
 
 		if err := json.Unmarshal([]byte(address), &user.Address); err != nil {
@@ -71,5 +89,10 @@ func (r *userRepo) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 
 		users = append(users, user)
 	}
-	return users, rows.Err()
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("row iteration error: %w", err)
+	}
+
+	return users, nil
 }
