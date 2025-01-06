@@ -18,7 +18,8 @@ func NewServer(db *sql.DB, publisher *kafka.Publisher) http.Handler {
 
 	router.HandleFunc("/health", pingHTTP).Methods("GET")
 
-	router.HandleFunc("/users", userHandler.CreateUser).Methods("POST")
+	router.HandleFunc("/users", userHandler.CreateUser).Methods(http.MethodPost)
+	router.HandleFunc("/users", userHandler.GetAllUsers).Methods(http.MethodGet)
 
 	return router
 }

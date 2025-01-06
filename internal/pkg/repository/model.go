@@ -10,12 +10,13 @@ import (
 
 type UserRepository interface {
 	CreateUser(ctx context.Context, user *domain.User) (*domain.User, error)
+	GetAllUsers(ctx context.Context) ([]domain.User, error)
 }
 
-type PostgresUserRepository struct {
+type userRepo struct {
 	db *sql.DB
 }
 
 func NewUserRepository(db *sql.DB) UserRepository {
-	return &PostgresUserRepository{db: db}
+	return &userRepo{db: db}
 }

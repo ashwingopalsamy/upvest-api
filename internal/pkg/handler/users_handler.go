@@ -64,3 +64,19 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+	users, err := h.repo.GetAllUsers(r.Context())
+	if err != nil {
+		writer.WriteErrJSON(w, http.StatusInternalServerError, ErrTitleDatabaseError, ErrMsgFailedToFetchUsers)
+		return
+	}
+	writer.WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"meta": map[string]interface{}{
+			"count": len(users),
+			"sort":  "created_at",
+			"order": "ASC",
+		},
+		"data": users,
+	})
+}

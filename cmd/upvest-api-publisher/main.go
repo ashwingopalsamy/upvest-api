@@ -7,6 +7,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const publisherPortAddr = ":8080"
+
 type Config struct {
 	DbDSN string
 }
@@ -37,8 +39,8 @@ func main() {
 	server := NewServer(db, publisher)
 
 	// Init HTTP Server
-	log.Info("starting server on :8080")
-	if err := http.ListenAndServe(":8080", server); err != nil {
+	log.Infof("starting server on %s", publisherPortAddr)
+	if err := http.ListenAndServe(publisherPortAddr, server); err != nil {
 		log.Fatalf("failed to start server: %v", err)
 	}
 }
